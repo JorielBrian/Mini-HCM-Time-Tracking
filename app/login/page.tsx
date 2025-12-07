@@ -7,7 +7,7 @@ import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase/config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { LoginFormData, LoginValidationErrors } from '@/src/types/user';
+import { LoginFormData, LoginValidationErrors } from '@/types/user';
 
 export default function LoginPage() {
   const router = useRouter();

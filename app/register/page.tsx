@@ -6,7 +6,7 @@ import { Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
 import { useCreateUserWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase/config';
 import Link from 'next/link';
-import { RegisterFormData, RegisterValidationErrors } from '@/src/types/user';
+import { RegisterFormData, RegisterValidationErrors } from '@/types/user';
 
 export default function RegisterPage() {
   // State for form data
