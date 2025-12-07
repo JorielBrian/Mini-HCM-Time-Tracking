@@ -1,137 +1,102 @@
-// app/login/page.tsx
+// app/login/page.tsx - Minimal version
 "use client";
 
-import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
-import { Eye, EyeOff, CheckCircle, XCircle, LogIn } from 'lucide-react';
+import { useState } from 'react';
 import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase/config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-// Define types locally if you don't have them in @/types/user
-interface LoginFormData {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-interface LoginValidationErrors {
-  email?: string;
-  password?: string;
-  submit?: string;
-}
-
 export default function LoginPage() {
   const router = useRouter();
-  
-  const [LoginFormData, setLoginFormData] = useState<LoginFormData>({
-    email: '',
-    password: '',
-    rememberMe: false,
-  });
-
-  const [signInWithEmailAndPassword, user, loading, firebaseError] = useSignInWithEmailAndPassword(auth);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<LoginValidationErrors>({});
+  const [signInWithEmailAndPassword, user, loading, error] = useSignInWithEmailAndPassword(auth);
 
-  // Load remembered email from localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const rememberedEmail = localStorage.getItem('rememberedEmail');
-      if (rememberedEmail) {
-        setLoginFormData(prev => ({
-          ...prev,
-          email: rememberedEmail,
-          rememberMe: true,
-        }));
-      }
-    }
-  }, []);
-
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
-    
-    setLoginFormData({
-      ...LoginFormData,
-      [name]: type === 'checkbox' ? checked : value,
-    });
-
-    if (errors[name as keyof LoginValidationErrors]) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        [name]: undefined,
-      }));
-    }
-
-    if (errors.submit) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        submit: undefined,
-      }));
-    }
-  };
-
-  const isValidEmail = (email: string): boolean => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
-  };
-
-  const validateForm = (): boolean => {
-    const newErrors: LoginValidationErrors = {};
-    
-    if (!LoginFormData.email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!isValidEmail(LoginFormData.email)) {
-      newErrors.email = "Please enter a valid email address";
-    }
-    
-    if (!LoginFormData.password) {
-      newErrors.password = "Password is required";
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!validateForm()) {
+    if (!email || !password) {
+      alert('Please fill in all fields');
       return;
     }
     
-    if (errors.submit) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        submit: undefined,
-      }));
-    }
-    
     try {
-      const res = await signInWithEmailAndPassword(LoginFormData.email, LoginFormData.password);
-      
-      if (res) {
-        if (LoginFormData.rememberMe) {
-          localStorage.setItem('rememberedEmail', LoginFormData.email);
-        } else {
-          localStorage.removeItem('rememberedEmail');
-        }
-        
+      const result = await signInWithEmailAndPassword(email, password);
+      if (result) {
         router.push('/dashboard');
       }
-      
-    } catch (error) {
-      console.error('Login error:', error);
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        submit: 'An error occurred during login. Please try again.',
-      }));
+    } catch (err) {
+      console.error('Login error:', err);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      {/* ... rest of your JSX remains exactly the same ... */}
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full space-y-8">
+        <div>
+          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+            Sign in to your account
+          </h2>
+        </div>
+        
+        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+          {error && (
+            <div className="text-red-600 text-sm text-center">
+              {error.message.includes('invalid-credential') 
+                ? 'Invalid email or password' 
+                : 'Login failed'}
+            </div>
+          )}
+          
+          <div className="space-y-4">
+            <div>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Email address"
+              />
+            </div>
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="appearance-none rounded-lg relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-2 text-gray-500"
+              >
+                {showPassword ? 'Hide' : 'Show'}
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
+          </div>
+
+          <div className="text-center">
+            <Link href="/register" className="font-medium text-blue-600 hover:text-blue-500">
+              Need an account? Sign up
+            </Link>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
