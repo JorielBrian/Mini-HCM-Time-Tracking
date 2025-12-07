@@ -1,68 +1,52 @@
 // app/login/page.tsx
 "use client";
 
-import { useState, FormEvent, ChangeEvent, useEffect } from 'react';
+import { useState, FormEvent, ChangeEvent } from 'react';
 import { Eye, EyeOff, CheckCircle, XCircle, LogIn } from 'lucide-react';
 import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import { auth } from '../firebase/config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
-// Define types locally if you don't have them in @/types/user
-interface LoginFormData {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-}
-
-interface LoginValidationErrors {
-  email?: string;
-  password?: string;
-  submit?: string;
-}
-
 export default function LoginPage() {
   const router = useRouter();
   
-  const [LoginFormData, setLoginFormData] = useState<LoginFormData>({
+  // State for form data
+  const [formData, setFormData] = useState({
     email: '',
     password: '',
-    rememberMe: false,
   });
 
   const [signInWithEmailAndPassword, user, loading, firebaseError] = useSignInWithEmailAndPassword(auth);
+
+  // State for visibility of password
   const [showPassword, setShowPassword] = useState(false);
-  const [errors, setErrors] = useState<LoginValidationErrors>({});
+  
+  // State for form validation errors
+  const [errors, setErrors] = useState<{
+    email?: string;
+    password?: string;
+    submit?: string;
+  }>({});
 
-  // Load remembered email from localStorage
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const rememberedEmail = localStorage.getItem('rememberedEmail');
-      if (rememberedEmail) {
-        setLoginFormData(prev => ({
-          ...prev,
-          email: rememberedEmail,
-          rememberMe: true,
-        }));
-      }
-    }
-  }, []);
-
+  // Handle input changes
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value } = e.target;
     
-    setLoginFormData({
-      ...LoginFormData,
-      [name]: type === 'checkbox' ? checked : value,
+    setFormData({
+      ...formData,
+      [name]: value,
     });
 
-    if (errors[name as keyof LoginValidationErrors]) {
+    // Clear error for this field when user starts typing
+    if (errors[name as keyof typeof errors]) {
       setErrors((prevErrors) => ({
         ...prevErrors,
         [name]: undefined,
       }));
     }
 
+    // Clear submit error when user starts typing
     if (errors.submit) {
       setErrors((prevErrors) => ({
         ...prevErrors,
@@ -71,21 +55,25 @@ export default function LoginPage() {
     }
   };
 
+  // Validate email format
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
+  // Form validation
   const validateForm = (): boolean => {
-    const newErrors: LoginValidationErrors = {};
+    const newErrors: typeof errors = {};
     
-    if (!LoginFormData.email.trim()) {
+    // Email validation
+    if (!formData.email.trim()) {
       newErrors.email = "Email is required";
-    } else if (!isValidEmail(LoginFormData.email)) {
+    } else if (!isValidEmail(formData.email)) {
       newErrors.email = "Please enter a valid email address";
     }
     
-    if (!LoginFormData.password) {
+    // Password validation
+    if (!formData.password) {
       newErrors.password = "Password is required";
     }
     
@@ -93,6 +81,7 @@ export default function LoginPage() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Handle form submission
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
@@ -100,6 +89,7 @@ export default function LoginPage() {
       return;
     }
     
+    // Clear any previous submit errors
     if (errors.submit) {
       setErrors((prevErrors) => ({
         ...prevErrors,
@@ -108,15 +98,10 @@ export default function LoginPage() {
     }
     
     try {
-      const res = await signInWithEmailAndPassword(LoginFormData.email, LoginFormData.password);
+      const res = await signInWithEmailAndPassword(formData.email, formData.password);
       
       if (res) {
-        if (LoginFormData.rememberMe) {
-          localStorage.setItem('rememberedEmail', LoginFormData.email);
-        } else {
-          localStorage.removeItem('rememberedEmail');
-        }
-        
+        // Login successful - redirect to dashboard
         router.push('/dashboard');
       }
       
@@ -180,14 +165,14 @@ export default function LoginPage() {
                   name="email"
                   type="email"
                   autoComplete="email"
-                  value={LoginFormData.email}
+                  value={formData.email}
                   onChange={handleInputChange}
                   className={`block w-full px-4 py-3 border rounded-lg text-black shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
                     errors.email ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="you@example.com"
                 />
-                {LoginFormData.email && !errors.email && isValidEmail(LoginFormData.email) && (
+                {formData.email && !errors.email && isValidEmail(formData.email) && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <CheckCircle className="h-5 w-5 text-green-500" />
                   </div>
@@ -217,7 +202,7 @@ export default function LoginPage() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  value={LoginFormData.password}
+                  value={formData.password}
                   onChange={handleInputChange}
                   className={`block w-full px-4 py-3 border rounded-lg text-black shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
                     errors.password ? 'border-red-300' : 'border-gray-300'
@@ -239,23 +224,6 @@ export default function LoginPage() {
               {errors.password && (
                 <p className="mt-2 text-sm text-red-600">{errors.password}</p>
               )}
-            </div>
-
-            {/* Remember Me & Demo Login */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="rememberMe"
-                  name="rememberMe"
-                  type="checkbox"
-                  checked={LoginFormData.rememberMe}
-                  onChange={handleInputChange}
-                  className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                />
-                <label htmlFor="rememberMe" className="ml-2 block text-sm text-gray-700">
-                  Remember me
-                </label>
-              </div>
             </div>
 
             {/* Submit Button */}
