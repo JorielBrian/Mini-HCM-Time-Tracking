@@ -4,11 +4,10 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthState, useSignOut } from 'react-firebase-hooks/auth';
-import { auth } from '../../app/firebase/config';
+import { auth } from '../firebase/config';
 import { 
   LogOut, 
-  User, 
-  Calendar, 
+  User,
   TrendingUp, 
   DollarSign, 
   Users, 

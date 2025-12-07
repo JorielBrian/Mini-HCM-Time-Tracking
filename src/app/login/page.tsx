@@ -4,7 +4,7 @@
 import { useState, FormEvent, ChangeEvent } from 'react';
 import { Eye, EyeOff, CheckCircle, XCircle, LogIn } from 'lucide-react';
 import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
-import { auth } from '../../app/firebase/config';
+import { auth } from '../firebase/config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { LoginFormData, LoginValidationErrors } from '@/src/types/user';
@@ -186,7 +186,7 @@ export default function LoginPage() {
                   autoComplete="email"
                   value={LoginFormData.email}
                   onChange={handleInputChange}
-                  className={`block w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
+                  className={`block w-full px-4 py-3 border rounded-lg text-black shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
                     errors.email ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="you@example.com"
@@ -223,7 +223,7 @@ export default function LoginPage() {
                   autoComplete="current-password"
                   value={LoginFormData.password}
                   onChange={handleInputChange}
-                  className={`block w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
+                  className={`block w-full px-4 py-3 border rounded-lg text-black shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
                     errors.password ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="Enter your password"
