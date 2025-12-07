@@ -7,24 +7,13 @@ import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import { auth } from '../../app/firebase/config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
-type FormData = {
-  email: string;
-  password: string;
-  rememberMe: boolean;
-};
-
-type ValidationErrors = {
-  email?: string;
-  password?: string;
-  submit?: string;
-};
+import { LoginFormData, LoginValidationErrors } from '@/src/types/user';
 
 export default function LoginPage() {
   const router = useRouter();
   
   // State for form data
-  const [formData, setFormData] = useState<FormData>({
+  const [LoginFormData, setLoginFormData] = useState<LoginFormData>({
     email: '',
     password: '',
     rememberMe: false,
@@ -36,19 +25,19 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   
   // State for form validation errors
-  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [errors, setErrors] = useState<LoginValidationErrors>({});
 
   // Handle input changes
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     
-    setFormData({
-      ...formData,
+    setLoginFormData({
+      ...LoginFormData,
       [name]: type === 'checkbox' ? checked : value,
     });
 
     // Clear error for this field when user starts typing
-    if (errors[name as keyof ValidationErrors]) {
+    if (errors[name as keyof LoginValidationErrors]) {
       setErrors((prevErrors) => ({
         ...prevErrors,
         [name]: undefined,
@@ -72,17 +61,17 @@ export default function LoginPage() {
 
   // Form validation
   const validateForm = (): boolean => {
-    const newErrors: ValidationErrors = {};
+    const newErrors: LoginValidationErrors = {};
     
     // Email validation
-    if (!formData.email.trim()) {
+    if (!LoginFormData.email.trim()) {
       newErrors.email = "Email is required";
-    } else if (!isValidEmail(formData.email)) {
+    } else if (!isValidEmail(LoginFormData.email)) {
       newErrors.email = "Please enter a valid email address";
     }
     
     // Password validation
-    if (!formData.password) {
+    if (!LoginFormData.password) {
       newErrors.password = "Password is required";
     }
     
@@ -107,14 +96,14 @@ export default function LoginPage() {
     }
     
     try {
-      const res = await signInWithEmailAndPassword(formData.email, formData.password);
+      const res = await signInWithEmailAndPassword(LoginFormData.email, LoginFormData.password);
       
       if (res) {
         console.log('Login successful:', res);
         
         // If remember me is checked, store email in localStorage
-        if (formData.rememberMe) {
-          localStorage.setItem('rememberedEmail', formData.email);
+        if (LoginFormData.rememberMe) {
+          localStorage.setItem('rememberedEmail', LoginFormData.email);
         } else {
           localStorage.removeItem('rememberedEmail');
         }
@@ -136,7 +125,7 @@ export default function LoginPage() {
   useState(() => {
     const rememberedEmail = localStorage.getItem('rememberedEmail');
     if (rememberedEmail) {
-      setFormData(prev => ({
+      setLoginFormData(prev => ({
         ...prev,
         email: rememberedEmail,
         rememberMe: true,
@@ -195,14 +184,14 @@ export default function LoginPage() {
                   name="email"
                   type="email"
                   autoComplete="email"
-                  value={formData.email}
+                  value={LoginFormData.email}
                   onChange={handleInputChange}
                   className={`block w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
                     errors.email ? 'border-red-300' : 'border-gray-300'
                   }`}
                   placeholder="you@example.com"
                 />
-                {formData.email && !errors.email && isValidEmail(formData.email) && (
+                {LoginFormData.email && !errors.email && isValidEmail(LoginFormData.email) && (
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <CheckCircle className="h-5 w-5 text-green-500" />
                   </div>
@@ -232,7 +221,7 @@ export default function LoginPage() {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   autoComplete="current-password"
-                  value={formData.password}
+                  value={LoginFormData.password}
                   onChange={handleInputChange}
                   className={`block w-full px-4 py-3 border rounded-lg shadow-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
                     errors.password ? 'border-red-300' : 'border-gray-300'
@@ -263,7 +252,7 @@ export default function LoginPage() {
                   id="rememberMe"
                   name="rememberMe"
                   type="checkbox"
-                  checked={formData.rememberMe}
+                  checked={LoginFormData.rememberMe}
                   onChange={handleInputChange}
                   className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                 />

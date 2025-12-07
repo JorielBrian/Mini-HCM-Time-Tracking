@@ -6,25 +6,11 @@ import { Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
 import { useCreateUserWithEmailAndPassword } from 'react-firebase-hooks/auth';
 import { auth } from '../../app/firebase/config';
 import Link from 'next/link';
-
-type FormData = {
-  email: string;
-  password: string;
-  confirmPassword: string;
-  termsAccepted: boolean;
-};
-
-type ValidationErrors = {
-  email?: string;
-  password?: string;
-  confirmPassword?: string;
-  termsAccepted?: string;
-  submit?: string;
-};
+import { RegisterFormData, RegisterValidationErrors } from '@/src/types/user';
 
 export default function RegisterPage() {
   // State for form data
-  const [formData, setFormData] = useState<FormData>({
+  const [RegisterFormData, setRegisterFormData] = useState<RegisterFormData>({
     email: '',
     password: '',
     confirmPassword: '',
@@ -38,7 +24,7 @@ export default function RegisterPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   // State for form validation errors
-  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [errors, setErrors] = useState<RegisterValidationErrors>({});
   
   // State for form submission
   const [submitSuccess, setSubmitSuccess] = useState(false);
@@ -47,13 +33,13 @@ export default function RegisterPage() {
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
     
-    setFormData({
-      ...formData,
+    setRegisterFormData({
+      ...RegisterFormData,
       [name]: type === 'checkbox' ? checked : value,
     });
 
     // Clear error for this field when user starts typing
-    if (errors[name as keyof ValidationErrors]) {
+    if (errors[name as keyof RegisterValidationErrors]) {
       setErrors((prevErrors) => ({
         ...prevErrors,
         [name]: undefined,
@@ -88,32 +74,32 @@ export default function RegisterPage() {
 
   // Form validation
   const validateForm = (): boolean => {
-    const newErrors: ValidationErrors = {};
+    const newErrors: RegisterValidationErrors = {};
     
     // Email validation
-    if (!formData.email.trim()) {
+    if (!RegisterFormData.email.trim()) {
       newErrors.email = "Email is required";
-    } else if (!isValidEmail(formData.email)) {
+    } else if (!isValidEmail(RegisterFormData.email)) {
       newErrors.email = "Please enter a valid email address";
     }
     
     // Password validation
-    const passwordRequirements = validatePassword(formData.password);
-    if (!formData.password) {
+    const passwordRequirements = validatePassword(RegisterFormData.password);
+    if (!RegisterFormData.password) {
       newErrors.password = "Password is required";
     } else if (passwordRequirements.length > 0) {
       newErrors.password = "Password does not meet requirements";
     }
     
     // Confirm password validation
-    if (!formData.confirmPassword) {
+    if (!RegisterFormData.confirmPassword) {
       newErrors.confirmPassword = "Please confirm your password";
-    } else if (formData.password !== formData.confirmPassword) {
+    } else if (RegisterFormData.password !== RegisterFormData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
     
     // Terms acceptance validation
-    if (!formData.termsAccepted) {
+    if (!RegisterFormData.termsAccepted) {
       newErrors.termsAccepted = "You must accept the terms and conditions";
     }
     
@@ -138,7 +124,7 @@ export default function RegisterPage() {
     }
     
     try {
-      const res = await createUserWithEmailAndPassword(formData.email, formData.password);
+      const res = await createUserWithEmailAndPassword(RegisterFormData.email, RegisterFormData.password);
       
       console.log({res});
       
@@ -147,7 +133,7 @@ export default function RegisterPage() {
         
         // Reset form after successful submission
         setTimeout(() => {
-          setFormData({
+          setRegisterFormData({
             email: '',
             password: '',
             confirmPassword: '',
@@ -185,7 +171,7 @@ export default function RegisterPage() {
               </div>
               <h3 className="text-2xl font-bold text-gray-900 mb-2">Account Created Successfully!</h3>
               <p className="text-gray-600 mb-6">
-                A verification email has been sent to <span className="font-semibold">{formData.email}</span>.
+                A verification email has been sent to <span className="font-semibold">{RegisterFormData.email}</span>.
               </p>
               <p className="text-gray-500 text-sm">
                 Redirecting you to the login page...
@@ -226,14 +212,14 @@ export default function RegisterPage() {
                     name="email"
                     type="email"
                     autoComplete="email"
-                    value={formData.email}
+                    value={RegisterFormData.email}
                     onChange={handleInputChange}
                     className={`block w-full px-4 py-3 border rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
                       errors.email ? 'border-red-300' : 'border-gray-300'
                     }`}
                     placeholder="you@example.com"
                   />
-                  {formData.email && !errors.email && isValidEmail(formData.email) && (
+                  {RegisterFormData.email && !errors.email && isValidEmail(RegisterFormData.email) && (
                     <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                       <CheckCircle className="h-5 w-5 text-green-500" />
                     </div>
@@ -255,7 +241,7 @@ export default function RegisterPage() {
                     name="password"
                     type={showPassword ? "text" : "password"}
                     autoComplete="new-password"
-                    value={formData.password}
+                    value={RegisterFormData.password}
                     onChange={handleInputChange}
                     className={`block w-full px-4 py-3 border rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
                       errors.password ? 'border-red-300' : 'border-gray-300'
@@ -276,44 +262,44 @@ export default function RegisterPage() {
                 </div>
                 
                 {/* Password Requirements */}
-                {formData.password && (
+                {RegisterFormData.password && (
                   <div className="mt-3 p-3 bg-gray-50 rounded-lg">
                     <p className="text-sm font-medium text-gray-700 mb-2">Password must contain:</p>
                     <ul className="space-y-1 text-sm">
-                      <li className={`flex items-center ${formData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
-                        {formData.password.length >= 8 ? (
+                      <li className={`flex items-center ${RegisterFormData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
+                        {RegisterFormData.password.length >= 8 ? (
                           <CheckCircle className="h-4 w-4 mr-2" />
                         ) : (
                           <XCircle className="h-4 w-4 mr-2" />
                         )}
                         At least 8 characters
                       </li>
-                      <li className={`flex items-center ${/\d/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                        {/\d/.test(formData.password) ? (
+                      <li className={`flex items-center ${/\d/.test(RegisterFormData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/\d/.test(RegisterFormData.password) ? (
                           <CheckCircle className="h-4 w-4 mr-2" />
                         ) : (
                           <XCircle className="h-4 w-4 mr-2" />
                         )}
                         At least one number
                       </li>
-                      <li className={`flex items-center ${/[A-Z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                        {/[A-Z]/.test(formData.password) ? (
+                      <li className={`flex items-center ${/[A-Z]/.test(RegisterFormData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/[A-Z]/.test(RegisterFormData.password) ? (
                           <CheckCircle className="h-4 w-4 mr-2" />
                         ) : (
                           <XCircle className="h-4 w-4 mr-2" />
                         )}
                         At least one uppercase letter
                       </li>
-                      <li className={`flex items-center ${/[a-z]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                        {/[a-z]/.test(formData.password) ? (
+                      <li className={`flex items-center ${/[a-z]/.test(RegisterFormData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/[a-z]/.test(RegisterFormData.password) ? (
                           <CheckCircle className="h-4 w-4 mr-2" />
                         ) : (
                           <XCircle className="h-4 w-4 mr-2" />
                         )}
                         At least one lowercase letter
                       </li>
-                      <li className={`flex items-center ${/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                        {/[!@#$%^&*(),.?":{}|<>]/.test(formData.password) ? (
+                      <li className={`flex items-center ${/[!@#$%^&*(),.?":{}|<>]/.test(RegisterFormData.password) ? 'text-green-600' : 'text-gray-500'}`}>
+                        {/[!@#$%^&*(),.?":{}|<>]/.test(RegisterFormData.password) ? (
                           <CheckCircle className="h-4 w-4 mr-2" />
                         ) : (
                           <XCircle className="h-4 w-4 mr-2" />
@@ -340,7 +326,7 @@ export default function RegisterPage() {
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     autoComplete="new-password"
-                    value={formData.confirmPassword}
+                    value={RegisterFormData.confirmPassword}
                     onChange={handleInputChange}
                     className={`block w-full px-4 py-3 border rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
                       errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
@@ -359,7 +345,7 @@ export default function RegisterPage() {
                     )}
                   </button>
                 </div>
-                {formData.confirmPassword && !errors.confirmPassword && formData.password === formData.confirmPassword && (
+                {RegisterFormData.confirmPassword && !errors.confirmPassword && RegisterFormData.password === RegisterFormData.confirmPassword && (
                   <p className="mt-2 text-sm text-green-600 flex items-center">
                     <CheckCircle className="h-4 w-4 mr-1" /> Passwords match
                   </p>
@@ -376,7 +362,7 @@ export default function RegisterPage() {
                     id="termsAccepted"
                     name="termsAccepted"
                     type="checkbox"
-                    checked={formData.termsAccepted}
+                    checked={RegisterFormData.termsAccepted}
                     onChange={handleInputChange}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
