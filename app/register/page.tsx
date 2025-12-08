@@ -1,105 +1,76 @@
-// app/register/page.tsx
 "use client";
 
 import { useState, FormEvent, ChangeEvent } from 'react';
-import { Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
-import { useCreateUserWithEmailAndPassword } from 'react-firebase-hooks/auth';
-import { auth } from '../../firebase/firebase.config';
+import { Eye, EyeOff, CheckCircle, XCircle, User, Clock } from 'lucide-react';
+import { auth, db } from '../../firebase/firebase.config';
+import { doc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import Link from 'next/link';
-import { RegisterFormData, RegisterValidationErrors } from '@/types/user';
+import { useRouter } from 'next/navigation';
 
 export default function RegisterPage() {
-  // State for form data
-  const [RegisterFormData, setRegisterFormData] = useState<RegisterFormData>({
+  const router = useRouter();
+  
+  const [formData, setFormData] = useState({
     email: '',
     password: '',
     confirmPassword: '',
     termsAccepted: false,
+    name: '',
+    role: 'employee' as const,
+    scheduleStart: '09:00',
+    scheduleEnd: '18:00'
   });
 
-  const [createUserWithEmailAndPassword, user, loading, firebaseError] = useCreateUserWithEmailAndPassword(auth);
-
-  // State for visibility of passwords
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  
-  // State for form validation errors
-  const [errors, setErrors] = useState<RegisterValidationErrors>({});
-  
-  // State for form submission
+  const [errors, setErrors] = useState<any>({});
   const [submitSuccess, setSubmitSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Handle input changes
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const { name, value, type, checked } = e.target;
+  const handleInputChange = (e: ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type, checked } = e.target as HTMLInputElement;
     
-    setRegisterFormData({
-      ...RegisterFormData,
+    setFormData({
+      ...formData,
       [name]: type === 'checkbox' ? checked : value,
     });
 
-    // Clear error for this field when user starts typing
-    if (errors[name as keyof RegisterValidationErrors]) {
-      setErrors((prevErrors) => ({
+    if (errors[name]) {
+      setErrors((prevErrors: any) => ({
         ...prevErrors,
         [name]: undefined,
       }));
     }
-
-    // Clear submit error when user starts typing
-    if (errors.submit) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        submit: undefined,
-      }));
-    }
   };
 
-  // Validate email format
   const isValidEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
   };
 
-  // Validate password strength
-  const validatePassword = (password: string): string[] => {
-    const requirements = [];
-    if (password.length < 8) requirements.push("At least 8 characters");
-    if (!/\d/.test(password)) requirements.push("At least one number");
-    if (!/[A-Z]/.test(password)) requirements.push("At least one uppercase letter");
-    if (!/[a-z]/.test(password)) requirements.push("At least one lowercase letter");
-    if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) requirements.push("At least one special character");
-    return requirements;
-  };
-
-  // Form validation
   const validateForm = (): boolean => {
-    const newErrors: RegisterValidationErrors = {};
+    const newErrors: any = {};
     
-    // Email validation
-    if (!RegisterFormData.email.trim()) {
+    if (!formData.email.trim()) {
       newErrors.email = "Email is required";
-    } else if (!isValidEmail(RegisterFormData.email)) {
+    } else if (!isValidEmail(formData.email)) {
       newErrors.email = "Please enter a valid email address";
     }
     
-    // Password validation
-    const passwordRequirements = validatePassword(RegisterFormData.password);
-    if (!RegisterFormData.password) {
+    if (!formData.password) {
       newErrors.password = "Password is required";
-    } else if (passwordRequirements.length > 0) {
-      newErrors.password = "Password does not meet requirements";
+    } else if (formData.password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
     }
     
-    // Confirm password validation
-    if (!RegisterFormData.confirmPassword) {
+    if (!formData.confirmPassword) {
       newErrors.confirmPassword = "Please confirm your password";
-    } else if (RegisterFormData.password !== RegisterFormData.confirmPassword) {
+    } else if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = "Passwords do not match";
     }
     
-    // Terms acceptance validation
-    if (!RegisterFormData.termsAccepted) {
+    if (!formData.termsAccepted) {
       newErrors.termsAccepted = "You must accept the terms and conditions";
     }
     
@@ -107,7 +78,6 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Handle form submission
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
@@ -115,40 +85,48 @@ export default function RegisterPage() {
       return;
     }
     
-    // Clear any previous submit errors
-    if (errors.submit) {
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        submit: undefined,
-      }));
-    }
+    setLoading(true);
     
     try {
-      const res = await createUserWithEmailAndPassword(RegisterFormData.email, RegisterFormData.password);
+      // 1. Create user with Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(
+        auth,
+        formData.email,
+        formData.password
+      );
       
-      console.log({res});
+      // 2. Create user profile in Firestore
+      await setDoc(doc(db, 'users', userCredential.user.uid), {
+        uid: userCredential.user.uid,
+        email: formData.email,
+        name: formData.name || formData.email.split('@')[0],
+        role: formData.role || 'employee',
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        schedule: {
+          start: formData.scheduleStart || '09:00',
+          end: formData.scheduleEnd || '18:00'
+        },
+        createdAt: new Date()
+      });
       
-      if (res) {
-        setSubmitSuccess(true);
-        
-        // Reset form after successful submission
-        setTimeout(() => {
-          setRegisterFormData({
-            email: '',
-            password: '',
-            confirmPassword: '',
-            termsAccepted: false,
-          });
-          setSubmitSuccess(false);
-        }, 3000);
-      }
+      setSubmitSuccess(true);
       
-    } catch (error) {
+      setTimeout(() => {
+        router.push('/dashboard');
+      }, 2000);
+      
+    } catch (error: any) {
       console.error('Signup error:', error);
-      setErrors((prevErrors) => ({
-        ...prevErrors,
-        submit: 'An error occurred during signup. Please try again.',
-      }));
+      
+      if (error.code === 'auth/email-already-in-use') {
+        setErrors({ submit: 'This email is already registered.' });
+      } else if (error.code === 'auth/weak-password') {
+        setErrors({ submit: 'Password is too weak.' });
+      } else {
+        setErrors({ submit: 'An error occurred. Please try again.' });
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -156,11 +134,9 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">NextAuth</h1>
-          <h2 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h2>
-          <p className="text-gray-600">
-            Join our community and start your journey with us
-          </p>
+          <h1 className="text-4xl font-bold text-blue-600 mb-2">TimeTrack Pro</h1>
+          <h2 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
+          <p className="text-gray-600">Join our team</p>
         </div>
 
         <div className="mt-8 bg-white py-8 px-6 shadow-xl rounded-2xl sm:px-10">
@@ -169,29 +145,11 @@ export default function RegisterPage() {
               <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100 mb-4">
                 <CheckCircle className="h-10 w-10 text-green-600" />
               </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-2">Account Created Successfully!</h3>
-              <p className="text-gray-600 mb-6">
-                A verification email has been sent to <span className="font-semibold">{RegisterFormData.email}</span>.
-              </p>
-              <p className="text-gray-500 text-sm">
-                Redirecting you to the login page...
-              </p>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">Success!</h3>
+              <p className="text-gray-600">Redirecting to dashboard...</p>
             </div>
           ) : (
             <form className="space-y-6" onSubmit={handleSubmit}>
-              {/* Firebase error message */}
-              {firebaseError && (
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                  <div className="flex items-center">
-                    <XCircle className="h-5 w-5 text-red-500 mr-2" />
-                    <p className="text-red-700">
-                      {firebaseError.message || 'Firebase authentication failed'}
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Custom submit error message */}
               {errors.submit && (
                 <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
                   <div className="flex items-center">
@@ -201,36 +159,77 @@ export default function RegisterPage() {
                 </div>
               )}
 
-              {/* Email Input */}
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    value={formData.name}
+                    onChange={handleInputChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="John Doe"
+                  />
+                  <User className="absolute right-3 top-3 h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                  Email address
+                  Email
                 </label>
                 <div className="relative">
                   <input
                     id="email"
                     name="email"
                     type="email"
-                    autoComplete="email"
-                    value={RegisterFormData.email}
+                    value={formData.email}
                     onChange={handleInputChange}
-                    className={`block w-full px-4 py-3 border rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
-                      errors.email ? 'border-red-300' : 'border-gray-300'
-                    }`}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="you@example.com"
                   />
-                  {RegisterFormData.email && !errors.email && isValidEmail(RegisterFormData.email) && (
-                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                      <CheckCircle className="h-5 w-5 text-green-500" />
-                    </div>
+                  {formData.email && isValidEmail(formData.email) && (
+                    <CheckCircle className="absolute right-3 top-3 h-5 w-5 text-green-500" />
                   )}
                 </div>
-                {errors.email && (
-                  <p className="mt-2 text-sm text-red-600">{errors.email}</p>
-                )}
+                {errors.email && <p className="mt-2 text-sm text-red-600">{errors.email}</p>}
               </div>
 
-              {/* Password Input */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label htmlFor="scheduleStart" className="block text-sm font-medium text-gray-700 mb-1">
+                    Shift Start
+                  </label>
+                  <div className="relative">
+                    <input
+                      id="scheduleStart"
+                      name="scheduleStart"
+                      type="time"
+                      value={formData.scheduleStart}
+                      onChange={handleInputChange}
+                      className="block w-full px-4 py-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                    <Clock className="absolute right-3 top-3 h-5 w-5 text-gray-400" />
+                  </div>
+                </div>
+                <div>
+                  <label htmlFor="scheduleEnd" className="block text-sm font-medium text-gray-700 mb-1">
+                    Shift End
+                  </label>
+                  <input
+                    id="scheduleEnd"
+                    name="scheduleEnd"
+                    type="time"
+                    value={formData.scheduleEnd}
+                    onChange={handleInputChange}
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
                   Password
@@ -240,82 +239,26 @@ export default function RegisterPage() {
                     id="password"
                     name="password"
                     type={showPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    value={RegisterFormData.password}
+                    value={formData.password}
                     onChange={handleInputChange}
-                    className={`block w-full px-4 py-3 border rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
-                      errors.password ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="Create a secure password"
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="••••••••"
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute right-3 top-3"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <EyeOff className="h-5 w-5 text-gray-400" />
                     ) : (
-                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <Eye className="h-5 w-5 text-gray-400" />
                     )}
                   </button>
                 </div>
-                
-                {/* Password Requirements */}
-                {RegisterFormData.password && (
-                  <div className="mt-3 p-3 bg-gray-50 rounded-lg">
-                    <p className="text-sm font-medium text-gray-700 mb-2">Password must contain:</p>
-                    <ul className="space-y-1 text-sm">
-                      <li className={`flex items-center ${RegisterFormData.password.length >= 8 ? 'text-green-600' : 'text-gray-500'}`}>
-                        {RegisterFormData.password.length >= 8 ? (
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                        ) : (
-                          <XCircle className="h-4 w-4 mr-2" />
-                        )}
-                        At least 8 characters
-                      </li>
-                      <li className={`flex items-center ${/\d/.test(RegisterFormData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                        {/\d/.test(RegisterFormData.password) ? (
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                        ) : (
-                          <XCircle className="h-4 w-4 mr-2" />
-                        )}
-                        At least one number
-                      </li>
-                      <li className={`flex items-center ${/[A-Z]/.test(RegisterFormData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                        {/[A-Z]/.test(RegisterFormData.password) ? (
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                        ) : (
-                          <XCircle className="h-4 w-4 mr-2" />
-                        )}
-                        At least one uppercase letter
-                      </li>
-                      <li className={`flex items-center ${/[a-z]/.test(RegisterFormData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                        {/[a-z]/.test(RegisterFormData.password) ? (
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                        ) : (
-                          <XCircle className="h-4 w-4 mr-2" />
-                        )}
-                        At least one lowercase letter
-                      </li>
-                      <li className={`flex items-center ${/[!@#$%^&*(),.?":{}|<>]/.test(RegisterFormData.password) ? 'text-green-600' : 'text-gray-500'}`}>
-                        {/[!@#$%^&*(),.?":{}|<>]/.test(RegisterFormData.password) ? (
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                        ) : (
-                          <XCircle className="h-4 w-4 mr-2" />
-                        )}
-                        At least one special character
-                      </li>
-                    </ul>
-                  </div>
-                )}
-                
-                {errors.password && (
-                  <p className="mt-2 text-sm text-red-600">{errors.password}</p>
-                )}
+                {errors.password && <p className="mt-2 text-sm text-red-600">{errors.password}</p>}
               </div>
 
-              {/* Confirm Password Input */}
               <div>
                 <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">
                   Confirm Password
@@ -325,96 +268,58 @@ export default function RegisterPage() {
                     id="confirmPassword"
                     name="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
-                    autoComplete="new-password"
-                    value={RegisterFormData.confirmPassword}
+                    value={formData.confirmPassword}
                     onChange={handleInputChange}
-                    className={`block w-full px-4 py-3 border rounded-lg shadow-sm text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out ${
-                      errors.confirmPassword ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="Re-enter your password"
+                    className="block w-full px-4 py-3 border border-gray-300 rounded-lg text-black focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="••••••••"
                   />
                   <button
                     type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                    className="absolute right-3 top-3"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <EyeOff className="h-5 w-5 text-gray-400" />
                     ) : (
-                      <Eye className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+                      <Eye className="h-5 w-5 text-gray-400" />
                     )}
                   </button>
                 </div>
-                {RegisterFormData.confirmPassword && !errors.confirmPassword && RegisterFormData.password === RegisterFormData.confirmPassword && (
-                  <p className="mt-2 text-sm text-green-600 flex items-center">
-                    <CheckCircle className="h-4 w-4 mr-1" /> Passwords match
-                  </p>
-                )}
-                {errors.confirmPassword && (
-                  <p className="mt-2 text-sm text-red-600">{errors.confirmPassword}</p>
-                )}
+                {errors.confirmPassword && <p className="mt-2 text-sm text-red-600">{errors.confirmPassword}</p>}
               </div>
 
-              {/* Terms and Conditions Checkbox */}
               <div className="flex items-start">
                 <div className="flex items-center h-5">
                   <input
                     id="termsAccepted"
                     name="termsAccepted"
                     type="checkbox"
-                    checked={RegisterFormData.termsAccepted}
+                    checked={formData.termsAccepted}
                     onChange={handleInputChange}
                     className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                   />
                 </div>
                 <div className="ml-3 text-sm">
                   <label htmlFor="termsAccepted" className="font-medium text-gray-700">
-                    I agree to the{' '}
-                    <Link href="/terms" className="text-blue-600 hover:text-blue-500">
-                      Terms of Service
-                    </Link>{' '}
-                    and{' '}
-                    <Link href="/privacy" className="text-blue-600 hover:text-blue-500">
-                      Privacy Policy
-                    </Link>
+                    I agree to the Terms and Privacy Policy
                   </label>
-                  {errors.termsAccepted && (
-                    <p className="mt-1 text-red-600">{errors.termsAccepted}</p>
-                  )}
+                  {errors.termsAccepted && <p className="mt-1 text-red-600">{errors.termsAccepted}</p>}
                 </div>
               </div>
 
-              {/* Submit Button */}
-              <div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className={`w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-white font-medium focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition duration-150 ease-in-out ${
-                    loading
-                      ? 'bg-blue-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  }`}
-                >
-                  {loading ? (
-                    <>
-                      <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                      </svg>
-                      Creating Account...
-                    </>
-                  ) : (
-                    'Create Account'
-                  )}
-                </button>
-              </div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-3 px-4 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </button>
 
-              {/* Already have an account */}
-              <div className="text-center mt-6">
+              <div className="text-center">
                 <p className="text-sm text-gray-600">
                   Already have an account?{' '}
                   <Link href="/login" className="font-medium text-blue-600 hover:text-blue-500">
-                    Sign in here
+                    Sign in
                   </Link>
                 </p>
               </div>
