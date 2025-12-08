@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { auth, db } from '../../../firebase/firebase.config';
 import { collection, query, where, getDocs } from 'firebase/firestore';
-import { Clock, Calendar, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { Clock, Calendar, CheckCircle, XCircle, AlertCircle, RefreshCw } from 'lucide-react';
 
 interface AttendanceRecord {
   id: string;
@@ -19,85 +19,113 @@ interface AttendanceRecord {
   scheduleEnd: string;
 }
 
-export default function AttendanceTable() {
+interface AttendanceTableProps {
+  refreshTrigger?: number; // Add this prop
+}
+
+export default function AttendanceTable({ refreshTrigger = 0 }: AttendanceTableProps) {
   const [records, setRecords] = useState<AttendanceRecord[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const user = auth.currentUser;
 
-  useEffect(() => {
-    const fetchAttendance = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+  // Memoize the fetch function to avoid unnecessary re-renders
+  const fetchAttendance = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
+    try {
+      setRefreshing(true);
       
-      setLoading(true);
-      try {
-        console.log('Fetching attendance for user:', user.uid);
+      console.log('Fetching attendance for user:', user.uid);
+      
+      const q = query(
+        collection(db, 'attendance'),
+        where('userId', '==', user.uid)
+      );
+      
+      const querySnapshot = await getDocs(q);
+      console.log('Query result:', querySnapshot.size, 'documents');
+      
+      const attendanceData: AttendanceRecord[] = [];
+      
+      querySnapshot.forEach((doc) => {
+        const data = doc.data();
         
-        // SIMPLE QUERY - No orderBy to avoid index issues
-        const q = query(
-          collection(db, 'attendance'),
-          where('userId', '==', user.uid)
-        );
-        
-        const querySnapshot = await getDocs(q);
-        console.log('Query result:', querySnapshot.size, 'documents');
-        
-        const attendanceData: AttendanceRecord[] = [];
-        
-        querySnapshot.forEach((doc) => {
-          const data = doc.data();
-          console.log('Document data:', data);
-          
-          attendanceData.push({
-            id: doc.id,
-            dateString: data.dateString || 
-                      (data.date ? new Date(data.date.seconds * 1000).toLocaleDateString() : '-'),
-            punchIn: data.punchIn || '-',
-            punchOut: data.punchOut || '-',
-            regularHours: data.regularHours || '0.00',
-            overtimeHours: data.overtimeHours || '0.00',
-            nightDiffHours: data.nightDiffHours || '0.00',
-            lateTime: data.lateTime || 'On time',
-            status: data.status || 'pending',
-            scheduleStart: data.scheduleUsed?.start || '09:00',
-            scheduleEnd: data.scheduleUsed?.end || '18:00'
-          });
-        });
-        
-        // Sort manually by date in descending order (newest first)
-        attendanceData.sort((a, b) => {
-          try {
-            const dateA = new Date(a.dateString);
-            const dateB = new Date(b.dateString);
-            return dateB.getTime() - dateA.getTime(); // Descending
-          } catch (error) {
-            return 0;
+        // Handle Firestore timestamp conversion
+        let dateString = '-';
+        if (data.dateString) {
+          dateString = data.dateString;
+        } else if (data.date) {
+          // Check if date is a Firestore timestamp
+          if (data.date.toDate) {
+            dateString = data.date.toDate().toLocaleDateString();
+          } else if (data.date.seconds) {
+            dateString = new Date(data.date.seconds * 1000).toLocaleDateString();
+          } else {
+            dateString = new Date(data.date).toLocaleDateString();
           }
+        }
+        
+        attendanceData.push({
+          id: doc.id,
+          dateString: dateString,
+          punchIn: data.punchIn || '-',
+          punchOut: data.punchOut || '-',
+          regularHours: data.regularHours || '0.00',
+          overtimeHours: data.overtimeHours || '0.00',
+          nightDiffHours: data.nightDiffHours || '0.00',
+          lateTime: data.lateTime || 'On time',
+          status: data.status || 'pending',
+          scheduleStart: data.scheduleUsed?.start || '09:00',
+          scheduleEnd: data.scheduleUsed?.end || '18:00'
         });
-        
-        console.log('Processed attendance data:', attendanceData);
-        setRecords(attendanceData);
-        
-      } catch (error: any) {
-        console.error('Error fetching attendance:', error);
-        console.error('Error code:', error.code);
-        console.error('Error message:', error.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAttendance();
+      });
+      
+      // Sort manually by date in descending order (newest first)
+      attendanceData.sort((a, b) => {
+        try {
+          const dateA = new Date(a.dateString);
+          const dateB = new Date(b.dateString);
+          return dateB.getTime() - dateA.getTime(); // Descending
+        } catch (error) {
+          return 0;
+        }
+      });
+      
+      console.log('Processed attendance data:', attendanceData);
+      setRecords(attendanceData);
+      
+    } catch (error: any) {
+      console.error('Error fetching attendance:', error);
+      console.error('Error code:', error.code);
+      console.error('Error message:', error.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
   }, [user]);
 
-  // Debug: Check what we have
-  console.log('Current user:', user?.email);
-  console.log('Records length:', records.length);
-  console.log('Loading state:', loading);
+  // Initial fetch on component mount
+  useEffect(() => {
+    fetchAttendance();
+  }, [fetchAttendance]);
 
-  if (loading) {
+  // Fetch when refreshTrigger changes (when punch in/out happens)
+  useEffect(() => {
+    if (refreshTrigger > 0) {
+      fetchAttendance();
+    }
+  }, [refreshTrigger, fetchAttendance]);
+
+  // Manual refresh function
+  const handleRefresh = () => {
+    fetchAttendance();
+  };
+
+  if (loading && !refreshing) {
     return (
       <div className="flex flex-col justify-center items-center p-8 space-y-4">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
@@ -123,6 +151,13 @@ export default function AttendanceTable() {
         <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
         <p className="text-gray-500 text-lg">No attendance records found</p>
         <p className="text-gray-400 text-sm mb-4">Start by punching in today!</p>
+        <button
+          onClick={handleRefresh}
+          className="inline-flex items-center px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
       </div>
     );
   }
@@ -135,9 +170,20 @@ export default function AttendanceTable() {
             <Clock className="h-5 w-5 text-blue-600 mr-2" />
             <h2 className="text-xl font-semibold text-gray-800">Attendance History</h2>
           </div>
-          <span className="text-sm text-gray-500">
-            {records.length} record{records.length !== 1 ? 's' : ''}
-          </span>
+          <div className="flex items-center space-x-4">
+            <span className="text-sm text-gray-500">
+              {records.length} record{records.length !== 1 ? 's' : ''}
+            </span>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="inline-flex items-center px-3 py-1 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition"
+              title="Refresh attendance data"
+            >
+              <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
+              {refreshing ? 'Refreshing...' : 'Refresh'}
+            </button>
+          </div>
         </div>
       </div>
       
@@ -172,7 +218,7 @@ export default function AttendanceTable() {
             {records.map((record, index) => (
               <tr 
                 key={record.id || index} 
-                className={`hover:bg-gray-50 ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
+                className={`hover:bg-gray-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}`}
               >
                 <td className="px-6 py-4">
                   <div className="text-sm font-medium text-gray-900">{record.dateString}</div>
@@ -183,20 +229,20 @@ export default function AttendanceTable() {
                 <td className="px-6 py-4">
                   <div className="space-y-1">
                     <div className="flex items-center text-sm">
-                      <CheckCircle className="h-3 w-3 text-green-500 mr-2" />
+                      <CheckCircle className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
                       <span className="font-medium text-gray-700">In:</span>
                       <span className="ml-2 text-gray-900">{record.punchIn}</span>
                     </div>
                     <div className="flex items-center text-sm">
                       {record.punchOut && record.punchOut !== '-' ? (
                         <>
-                          <XCircle className="h-3 w-3 text-red-500 mr-2" />
+                          <XCircle className="h-3 w-3 text-red-500 mr-2 flex-shrink-0" />
                           <span className="font-medium text-gray-700">Out:</span>
                           <span className="ml-2 text-gray-900">{record.punchOut}</span>
                         </>
                       ) : (
                         <div className="flex items-center text-yellow-600">
-                          <AlertCircle className="h-3 w-3 mr-2" />
+                          <AlertCircle className="h-3 w-3 mr-2 flex-shrink-0" />
                           <span className="text-sm">Not punched out</span>
                         </div>
                       )}
@@ -229,7 +275,7 @@ export default function AttendanceTable() {
                 <td className="px-6 py-4 whitespace-nowrap">
                   {record.lateTime !== 'On time' && record.lateTime !== '-' && record.lateTime !== '0m' ? (
                     <span className="flex items-center px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
-                      <AlertCircle className="h-3 w-3 mr-1" />
+                      <AlertCircle className="h-3 w-3 mr-1 flex-shrink-0" />
                       {record.lateTime}
                     </span>
                   ) : (
@@ -261,13 +307,13 @@ export default function AttendanceTable() {
             </div>
             <div className="flex items-center space-x-2">
               <button 
-                className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
+                className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 transition"
                 disabled
               >
                 ← Previous
               </button>
               <button 
-                className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50"
+                className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-100 disabled:opacity-50 transition"
                 disabled
               >
                 Next →
