@@ -69,7 +69,7 @@ export default function DashboardLayout({
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                   <Clock className="h-5 w-5 text-white" />
                 </div>
-                <h1 className="ml-3 text-xl font-bold text-gray-900">TimeTrack Pro</h1>
+                <h1 className="ml-3 text-xl font-bold text-gray-900">Mini HCM Time Tracking</h1>
               </div>
 
               <div className="hidden lg:ml-8 lg:flex lg:space-x-8">
@@ -172,7 +172,7 @@ export default function DashboardLayout({
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
               <p className="text-sm text-gray-500">
-                © {new Date().getFullYear()} TimeTrack Pro
+                © {new Date().getFullYear()} Mini HCM Time Tracking
               </p>
             </div>
             <div className="flex space-x-6">
