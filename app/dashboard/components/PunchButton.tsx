@@ -14,6 +14,7 @@ import {
   setDoc 
 } from 'firebase/firestore';
 import { calculateTimeMetrics, formatTime, formatDecimalHours } from '@/lib/timeCalculations';
+import { CheckCircle, XCircle } from 'lucide-react';
 
 interface PunchButtonProps {
   name: string;
@@ -22,7 +23,14 @@ interface PunchButtonProps {
 
 export default function PunchButton({ name, action }: PunchButtonProps) {
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{text: string, type: 'success' | 'error' | 'warning'} | null>(null);
   const user = auth.currentUser;
+
+  // Clear message after timeout
+  const showMessage = (text: string, type: 'success' | 'error' | 'warning' = 'success') => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage(null), 5000);
+  };
 
   const getUserSchedule = async (userId: string) => {
     try {
@@ -33,6 +41,7 @@ export default function PunchButton({ name, action }: PunchButtonProps) {
       return { start: '09:00', end: '18:00' };
     } catch (error) {
       console.error('Error fetching user schedule:', error);
+      showMessage('Error fetching schedule', 'error');
       return { start: '09:00', end: '18:00' };
     }
   };
@@ -57,7 +66,6 @@ export default function PunchButton({ name, action }: PunchButtonProps) {
     const todayString = today.toISOString().split('T')[0];
     
     try {
-      // Use dateString for query to avoid index issues
       const q = query(
         collection(db, 'attendance'),
         where('userId', '==', user.uid),
@@ -74,8 +82,13 @@ export default function PunchButton({ name, action }: PunchButtonProps) {
       }
       
       return null;
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error finding today attendance:', error);
+      
+      if (error.code === 'permission-denied') {
+        showMessage('Permission denied. Please contact administrator.', 'error');
+      }
+      
       return null;
     }
   };
@@ -111,13 +124,18 @@ export default function PunchButton({ name, action }: PunchButtonProps) {
   };
 
   const punchInHandler = async () => {
-    if (!user || isLoading) return;
+    if (!user || isLoading) {
+      showMessage('Please log in first', 'warning');
+      return;
+    }
     
     setIsLoading(true);
+    
     try {
       const existingRecord = await findTodayAttendance();
       if (existingRecord) {
-        alert('You have already punched in today!');
+        showMessage('You have already punched in today!', 'warning');
+        setIsLoading(false);
         return;
       }
       
@@ -131,9 +149,11 @@ export default function PunchButton({ name, action }: PunchButtonProps) {
       scheduleStartTime.setHours(startHour, startMinute, 0, 0);
       
       let lateTime = 'On time';
+      let lateMinutes = 0;
+      
       if (now > scheduleStartTime) {
         const lateMs = now.getTime() - scheduleStartTime.getTime();
-        const lateMinutes = Math.floor(lateMs / (1000 * 60));
+        lateMinutes = Math.floor(lateMs / (1000 * 60));
         lateTime = formatTime(lateMinutes);
       }
       
@@ -151,31 +171,49 @@ export default function PunchButton({ name, action }: PunchButtonProps) {
         createdAt: new Date()
       });
       
-      alert('✓ Punch In recorded!');
-      window.location.reload();
+      if (lateMinutes > 0) {
+        showMessage(`Punched in at ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} (${lateTime} late)`, 'warning');
+      } else {
+        showMessage(`Punched in at ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`, 'success');
+      }
       
-    } catch (error) {
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
+    } catch (error: any) {
       console.error('Error punching in:', error);
-      alert('Error recording punch in');
+      
+      if (error.code === 'permission-denied') {
+        showMessage('Permission denied. Please contact administrator.', 'error');
+      } else {
+        showMessage('Error recording punch in', 'error');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   const punchOutHandler = async () => {
-    if (!user || isLoading) return;
+    if (!user || isLoading) {
+      showMessage('Please log in first', 'warning');
+      return;
+    }
     
     setIsLoading(true);
+    
     try {
       const attendanceRecord = await findTodayAttendance();
       
       if (!attendanceRecord) {
-        alert('Please punch in first!');
+        showMessage('Please punch in first!', 'warning');
+        setIsLoading(false);
         return;
       }
       
       if (attendanceRecord.data.punchOut) {
-        alert('You have already punched out today!');
+        showMessage('You have already punched out today!', 'warning');
+        setIsLoading(false);
         return;
       }
       
@@ -213,16 +251,21 @@ export default function PunchButton({ name, action }: PunchButtonProps) {
         name: user.email?.split('@')[0] 
       });
       
-      alert('✓ Punch Out recorded!\n\n' +
-            `Regular: ${formatDecimalHours(metrics.regularHours)}\n` +
-            `Overtime: ${formatDecimalHours(metrics.overtimeHours)}\n` +
-            `Night Diff: ${formatDecimalHours(metrics.nightDifferentialHours)}`);
-            
-      window.location.reload();
+      const message = `Punched out at ${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}\nRegular: ${formatDecimalHours(metrics.regularHours)}`;
+      showMessage(message, 'success');
       
-    } catch (error) {
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+      
+    } catch (error: any) {
       console.error('Error punching out:', error);
-      alert('Error recording punch out');
+      
+      if (error.code === 'permission-denied') {
+        showMessage('Permission denied. Please contact administrator.', 'error');
+      } else {
+        showMessage('Error recording punch out', 'error');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -231,7 +274,7 @@ export default function PunchButton({ name, action }: PunchButtonProps) {
   const punchHandler = action === "out" ? punchOutHandler : punchInHandler;
 
   return (
-    <div className="flex justify-center items-center">
+    <div className="flex flex-col items-center">
       <button 
         onClick={punchHandler}
         disabled={isLoading || !user}
@@ -242,8 +285,8 @@ export default function PunchButton({ name, action }: PunchButtonProps) {
           } 
           text-white font-bold py-4 px-8 rounded-lg 
           transition-all duration-200 border-b-4
-          ${(isLoading || !user) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105'}
-          text-lg shadow-lg w-48
+          ${(isLoading || !user) ? 'opacity-50 cursor-not-allowed' : 'hover:scale-105 active:scale-95'}
+          text-lg shadow-lg w-48 mb-2
         `}
       >
         {isLoading ? (
@@ -256,11 +299,29 @@ export default function PunchButton({ name, action }: PunchButtonProps) {
           </div>
         ) : (
           <div className="flex items-center justify-center">
-            <div className={`h-3 w-3 rounded-full mr-3 ${action === "in" ? 'bg-green-300' : 'bg-blue-300'}`}></div>
-            {name}
+            <div className={`h-3 w-3 rounded-full mr-3 ${action === "in" ? 'bg-green-300 animate-pulse' : 'bg-blue-300 animate-pulse'}`}></div>
+            <span className="font-bold">{name}</span>
           </div>
         )}
       </button>
+      
+      {/* Status message display */}
+      {message && (
+        <div className={`mt-2 p-3 rounded-lg text-sm font-medium w-64 text-center transition-all duration-300 ${
+          message.type === 'success' ? 'bg-green-50 text-green-700 border border-green-200' :
+          message.type === 'error' ? 'bg-red-50 text-red-700 border border-red-200' :
+          'bg-yellow-50 text-yellow-700 border border-yellow-200'
+        }`}>
+          <div className="flex items-center justify-center">
+            {message.type === 'success' ? (
+              <CheckCircle className="h-4 w-4 mr-2" />
+            ) : (
+              <XCircle className="h-4 w-4 mr-2" />
+            )}
+            {message.text}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
