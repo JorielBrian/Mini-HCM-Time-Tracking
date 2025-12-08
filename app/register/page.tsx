@@ -134,7 +134,7 @@ export default function RegisterPage() {
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
         <div className="text-center">
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">TimeTrack Pro</h1>
+          <h1 className="text-4xl font-bold text-blue-600 mb-2">Mini HCM Time Tracking</h1>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h2>
           <p className="text-gray-600">Join our team</p>
         </div>
