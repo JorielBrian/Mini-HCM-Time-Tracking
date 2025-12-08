@@ -11,34 +11,28 @@ export interface TimeCalculations {
 export function calculateTimeMetrics(
   punchIn: Date,
   punchOut: Date,
-  scheduleStart: string, // '09:00'
-  scheduleEnd: string   // '18:00'
+  scheduleStart: string,
+  scheduleEnd: string
 ): TimeCalculations {
-  // Parse schedule times
   const [startHour, startMinute] = scheduleStart.split(':').map(Number);
   const [endHour, endMinute] = scheduleEnd.split(':').map(Number);
   
-  // Create schedule times for the same day as punch in
   const scheduleStartTime = new Date(punchIn);
   scheduleStartTime.setHours(startHour, startMinute, 0, 0);
   
   const scheduleEndTime = new Date(punchIn);
   scheduleEndTime.setHours(endHour, endMinute, 0, 0);
   
-  // If schedule end is before schedule start (overnight shift), add a day
   if (scheduleEndTime < scheduleStartTime) {
     scheduleEndTime.setDate(scheduleEndTime.getDate() + 1);
   }
   
-  // Calculate total worked minutes
   const totalWorkedMs = punchOut.getTime() - punchIn.getTime();
   const totalWorkedMinutes = Math.max(0, Math.floor(totalWorkedMs / (1000 * 60)));
   
-  // Calculate late minutes
   const lateMs = Math.max(0, punchIn.getTime() - scheduleStartTime.getTime());
   const lateMinutes = Math.floor(lateMs / (1000 * 60));
   
-  // Calculate regular hours (within schedule)
   let regularStart = punchIn < scheduleStartTime ? scheduleStartTime : punchIn;
   let regularEnd = punchOut > scheduleEndTime ? scheduleEndTime : punchOut;
   
@@ -47,25 +41,20 @@ export function calculateTimeMetrics(
     regularMinutes = Math.floor((regularEnd.getTime() - regularStart.getTime()) / (1000 * 60));
   }
   
-  // Calculate overtime (work after schedule end or before schedule start)
   let overtimeMinutes = 0;
   
-  // Overtime before schedule start
   if (punchIn < scheduleStartTime) {
     const earlyOvertimeMs = scheduleStartTime.getTime() - punchIn.getTime();
     overtimeMinutes += Math.floor(earlyOvertimeMs / (1000 * 60));
   }
   
-  // Overtime after schedule end
   if (punchOut > scheduleEndTime) {
     const lateOvertimeMs = punchOut.getTime() - scheduleEndTime.getTime();
     overtimeMinutes += Math.floor(lateOvertimeMs / (1000 * 60));
   }
   
-  // Calculate night differential (22:00-06:00)
   const nightDiffMinutes = calculateNightDifferential(punchIn, punchOut);
   
-  // Calculate undertime (leaving before schedule end, arriving on time)
   let undertimeMinutes = 0;
   if (punchIn <= scheduleStartTime && punchOut < scheduleEndTime) {
     const undertimeMs = scheduleEndTime.getTime() - punchOut.getTime();
@@ -84,13 +73,12 @@ export function calculateTimeMetrics(
 }
 
 function calculateNightDifferential(start: Date, end: Date): number {
-  const NIGHT_START = 22; // 10 PM
-  const NIGHT_END = 6;    // 6 AM
+  const NIGHT_START = 22;
+  const NIGHT_END = 6;
   
   let nightMinutes = 0;
   let current = new Date(start);
   
-  // Limit to max 24 hours
   const maxMinutes = 24 * 60;
   let minutesProcessed = 0;
   
