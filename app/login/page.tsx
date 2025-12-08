@@ -4,7 +4,7 @@
 import { useState, FormEvent, ChangeEvent } from 'react';
 import { Eye, EyeOff, CheckCircle, XCircle, LogIn } from 'lucide-react';
 import { useSignInWithEmailAndPassword } from 'react-firebase-hooks/auth';
-import { auth } from '../firebase/config';
+import { auth } from '../../firebase/firebase.config';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 

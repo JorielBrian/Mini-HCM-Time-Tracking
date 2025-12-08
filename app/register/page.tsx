@@ -4,7 +4,7 @@
 import { useState, FormEvent, ChangeEvent } from 'react';
 import { Eye, EyeOff, CheckCircle, XCircle } from 'lucide-react';
 import { useCreateUserWithEmailAndPassword } from 'react-firebase-hooks/auth';
-import { auth } from '../firebase/config';
+import { auth } from '../../firebase/firebase.config';
 import Link from 'next/link';
 import { RegisterFormData, RegisterValidationErrors } from '@/types/user';
 

@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useAuthState, useSignOut } from 'react-firebase-hooks/auth';
-import { auth } from '../firebase/config';
+import { auth } from '../../firebase/firebase.config';
 import { useRouter } from 'next/navigation';
 import { 
   LogOut, 
@@ -51,7 +51,7 @@ export default function DashboardLayout({
   }
 
   if (!user) {
-    return null; // Will redirect in middleware or parent component
+    return null;
   }
 
   return (
