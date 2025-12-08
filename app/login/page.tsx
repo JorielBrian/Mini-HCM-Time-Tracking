@@ -58,7 +58,7 @@ export default function LoginPage() {
           <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4">
             <LogIn className="h-8 w-8 text-white" />
           </div>
-          <h1 className="text-4xl font-bold text-blue-600 mb-2">TimeTrack Pro</h1>
+          <h1 className="text-4xl font-bold text-blue-600 mb-2">Mini HCM Time Tracking</h1>
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h2>
           <p className="text-gray-600">Sign in to your account</p>
         </div>
