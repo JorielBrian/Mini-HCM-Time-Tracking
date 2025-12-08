@@ -1,22 +1,18 @@
-// Import the functions you need from the SDKs you need
 import { getApps, initializeApp, getApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
 
-// Your web app's Firebase configuration
 const firebaseConfig = {
   apiKey: "AIzaSyCfHDV0KLLKRQcA4xJeo7OW3ccpkOWqv5U",
-  authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
-  projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-  storageBucket: process.env.NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET,
-  messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_MESSAGE_SENDER_ID,
-  appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+  authDomain: "mini-hcm-time-tracking-d4cd8.firebaseapp.com",
+  projectId: "mini-hcm-time-tracking-d4cd8",
+  storageBucket: "mini-hcm-time-tracking-d4cd8.firebasestorage.app",
+  messagingSenderId: "796120432726",
+  appId: "1:796120432726:web:3c7ff5e30d000e47dabbf7"
 };
 
-// Initialize Firebase
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp()
+const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
+
 export { auth, app, db };
