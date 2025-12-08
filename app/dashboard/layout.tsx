@@ -1,9 +1,8 @@
-// app/dashboard/layout.tsx
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuthState, useSignOut } from 'react-firebase-hooks/auth';
-import { auth } from '../../firebase/firebase.config';
+import { auth, db } from '../../firebase/firebase.config';
 import { useRouter } from 'next/navigation';
 import { 
   LogOut, 
@@ -17,7 +16,11 @@ import {
   Home,
   FileText,
   BarChart3,
+  Shield,
+  Calendar,
+  Clock
 } from 'lucide-react';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function DashboardLayout({
   children,
@@ -29,8 +32,25 @@ export default function DashboardLayout({
   const [signOut] = useSignOut(auth);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
+  const [userRole, setUserRole] = useState<'employee' | 'admin'>('employee');
 
-  // Handle logout
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (user) {
+        try {
+          const userDoc = await getDoc(doc(db, 'users', user.uid));
+          if (userDoc.exists()) {
+            setUserRole(userDoc.data().role || 'employee');
+          }
+        } catch (error) {
+          console.error('Error fetching user role:', error);
+        }
+      }
+    };
+
+    fetchUserRole();
+  }, [user]);
+
   const handleLogout = async () => {
     const success = await signOut();
     if (success) {
@@ -38,7 +58,6 @@ export default function DashboardLayout({
     }
   };
 
-  // Loading state
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 flex items-center justify-center">
@@ -70,14 +89,14 @@ export default function DashboardLayout({
               
               <div className="flex-shrink-0 flex items-center ml-4 lg:ml-0">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <BarChart3 className="h-5 w-5 text-white" />
+                  <Clock className="h-5 w-5 text-white" />
                 </div>
-                <h1 className="ml-3 text-xl font-bold text-gray-900">Dashboard</h1>
+                <h1 className="ml-3 text-xl font-bold text-gray-900">TimeTrack Pro</h1>
               </div>
 
               <div className="hidden lg:ml-8 lg:flex lg:space-x-8">
                 <button 
-                  onClick={() => setActiveTab('overview')}
+                  onClick={() => { setActiveTab('overview'); router.push('/dashboard'); }}
                   className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
                     activeTab === 'overview' 
                       ? 'text-blue-600 border-b-2 border-blue-600' 
@@ -85,30 +104,35 @@ export default function DashboardLayout({
                   }`}
                 >
                   <Home className="h-4 w-4 mr-2" />
-                  Overview
+                  Dashboard
                 </button>
-                <button 
-                  onClick={() => setActiveTab('analytics')}
-                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
-                    activeTab === 'analytics' 
-                      ? 'text-blue-600 border-b-2 border-blue-600' 
-                      : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <TrendingUp className="h-4 w-4 mr-2" />
-                  Analytics
-                </button>
-                <button 
-                  onClick={() => setActiveTab('reports')}
-                  className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
-                    activeTab === 'reports' 
-                      ? 'text-blue-600 border-b-2 border-blue-600' 
-                      : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  }`}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Reports
-                </button>
+                
+                {userRole === 'admin' && (
+                  <>
+                    <button 
+                      onClick={() => { setActiveTab('admin'); router.push('/admin'); }}
+                      className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                        activeTab === 'admin' 
+                          ? 'text-blue-600 border-b-2 border-blue-600' 
+                          : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <Shield className="h-4 w-4 mr-2" />
+                      Admin
+                    </button>
+                    <button 
+                      onClick={() => { setActiveTab('reports'); }}
+                      className={`inline-flex items-center px-1 pt-1 text-sm font-medium ${
+                        activeTab === 'reports' 
+                          ? 'text-blue-600 border-b-2 border-blue-600' 
+                          : 'text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      }`}
+                    >
+                      <BarChart3 className="h-4 w-4 mr-2" />
+                      Reports
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 
@@ -141,9 +165,14 @@ export default function DashboardLayout({
                     <p className="text-sm font-medium text-gray-700">
                       {user.email?.split('@')[0] || 'User'}
                     </p>
-                    <p className="text-xs text-gray-500">
-                      {user.email || 'user@example.com'}
-                    </p>
+                    <div className="flex items-center">
+                      <span className="text-xs text-gray-500">
+                        {userRole === 'admin' ? 'Administrator' : 'Employee'}
+                      </span>
+                      {userRole === 'admin' && (
+                        <Shield className="h-3 w-3 text-blue-500 ml-1" />
+                      )}
+                    </div>
                   </div>
                 </div>
                 
@@ -165,26 +194,31 @@ export default function DashboardLayout({
         <div className="lg:hidden bg-white shadow-lg">
           <div className="px-4 pt-2 pb-3 space-y-1">
             <button 
-              onClick={() => { setActiveTab('overview'); setIsMobileMenuOpen(false); }}
+              onClick={() => { setActiveTab('overview'); router.push('/dashboard'); setIsMobileMenuOpen(false); }}
               className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md w-full"
             >
               <Home className="h-5 w-5 mr-3" />
-              Overview
+              Dashboard
             </button>
-            <button 
-              onClick={() => { setActiveTab('analytics'); setIsMobileMenuOpen(false); }}
-              className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md w-full"
-            >
-              <TrendingUp className="h-5 w-5 mr-3" />
-              Analytics
-            </button>
-            <button 
-              onClick={() => { setActiveTab('reports'); setIsMobileMenuOpen(false); }}
-              className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md w-full"
-            >
-              <FileText className="h-5 w-5 mr-3" />
-              Reports
-            </button>
+            
+            {userRole === 'admin' && (
+              <>
+                <button 
+                  onClick={() => { setActiveTab('admin'); router.push('/admin'); setIsMobileMenuOpen(false); }}
+                  className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md w-full"
+                >
+                  <Shield className="h-5 w-5 mr-3" />
+                  Admin Dashboard
+                </button>
+                <button 
+                  onClick={() => { setActiveTab('reports'); setIsMobileMenuOpen(false); }}
+                  className="flex items-center px-3 py-2 text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 rounded-md w-full"
+                >
+                  <BarChart3 className="h-5 w-5 mr-3" />
+                  Reports
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -195,34 +229,25 @@ export default function DashboardLayout({
       </main>
 
       {/* Footer */}
-      <Footer />
-    </div>
-  );
-}
-
-function Footer() {
-  return (
       <footer className="bg-white border-t">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
               <p className="text-sm text-gray-500">
-                © 2024 NextAuth Dashboard. All rights reserved.
+                © {new Date().getFullYear()} TimeTrack Pro. Mini HCM System.
               </p>
             </div>
             <div className="flex space-x-6">
-              <a href="#" className="text-sm text-gray-500 hover:text-gray-700">
+              <button className="text-sm text-gray-500 hover:text-gray-700">
                 Privacy Policy
-              </a>
-              <a href="#" className="text-sm text-gray-500 hover:text-gray-700">
+              </button>
+              <button className="text-sm text-gray-500 hover:text-gray-700">
                 Terms of Service
-              </a>
-              <a href="#" className="text-sm text-gray-500 hover:text-gray-700">
-                Contact Us
-              </a>
+              </button>
             </div>
           </div>
         </div>
       </footer>
+    </div>
   );
 }
