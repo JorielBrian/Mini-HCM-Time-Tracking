@@ -5,7 +5,7 @@ import './globals.css';
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "TimeTrack Pro - Mini HCM",
+  title: "Mini HCM Time Tracking",
   description: "Employee time tracking system",
 };
 
