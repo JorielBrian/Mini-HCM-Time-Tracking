@@ -7,6 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Mini HCM Time Tracking",
   description: "Employee time tracking system",
+  icons: '/logo.png',
 };
 
 export default function RootLayout({
