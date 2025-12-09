@@ -177,7 +177,7 @@ export default function AttendanceTable({ refreshTrigger = 0 }: AttendanceTableP
             <button
               onClick={handleRefresh}
               disabled={refreshing}
-              className="inline-flex items-center px-3 py-1 text-sm bg-white border border-gray-300 rounded-lg hover:bg-gray-50 disabled:opacity-50 transition"
+              className="inline-flex items-center px-3 py-1 text-sm bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 shadow-md disabled:opacity-50 transition"
               title="Refresh attendance data"
             >
               <RefreshCw className={`h-4 w-4 mr-1 ${refreshing ? 'animate-spin' : ''}`} />
