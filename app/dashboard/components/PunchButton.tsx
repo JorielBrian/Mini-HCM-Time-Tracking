@@ -310,11 +310,11 @@ export default function PunchButton({ name, action, onAttendanceUpdate }: PunchB
         }`}>
           <div className="flex items-center justify-center">
             {message.type === 'success' ? (
-              <CheckCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+              <CheckCircle className="h-4 w-4 mr-2 shrink-0" />
             ) : (
-              <XCircle className="h-4 w-4 mr-2 flex-shrink-0" />
+              <XCircle className="h-4 w-4 mr-2 shrink-0" />
             )}
-            <span className="break-words">{message.text}</span>
+            <span className="wrap-break-word">{message.text}</span>
           </div>
         </div>
       )}

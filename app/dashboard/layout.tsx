@@ -15,6 +15,7 @@ import {
   Clock
 } from 'lucide-react';
 import { doc, getDoc } from 'firebase/firestore';
+import Footer from './components/Footer';
 
 export default function DashboardLayout({
   children,
@@ -65,7 +66,7 @@ export default function DashboardLayout({
                 {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
               </button>
               
-              <div className="flex-shrink-0 flex items-center ml-4 lg:ml-0">
+              <div className="shrink-0 flex items-center ml-4 lg:ml-0">
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                   <Clock className="h-5 w-5 text-white" />
                 </div>
@@ -73,13 +74,13 @@ export default function DashboardLayout({
               </div>
 
               <div className="hidden lg:ml-8 lg:flex lg:space-x-8">
-                <button 
+                {/* <button 
                   onClick={() => router.push('/dashboard')}
                   className="inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-600 border-b-2 border-blue-600"
                 >
                   <Home className="h-4 w-4 mr-2" />
                   Dashboard
-                </button>
+                </button> */}
                 
                 {userRole === 'admin' && (
                   <button 
@@ -94,7 +95,7 @@ export default function DashboardLayout({
             </div>
 
             <div className="flex items-center">
-              <div className="hidden lg:block relative">
+              {/* <div className="hidden lg:block relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Search className="h-5 w-5 text-gray-400" />
                 </div>
@@ -107,7 +108,7 @@ export default function DashboardLayout({
 
               <button className="ml-4 p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100">
                 <Bell size={20} />
-              </button>
+              </button> */}
 
               <div className="ml-4 relative flex items-center">
                 <div className="flex items-center">
@@ -166,26 +167,8 @@ export default function DashboardLayout({
       <main className="py-6">
         {children}
       </main>
-
-      <footer className="bg-white border-t">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="mb-4 md:mb-0">
-              <p className="text-sm text-gray-500">
-                © {new Date().getFullYear()} Mini HCM Time Tracking
-              </p>
-            </div>
-            <div className="flex space-x-6">
-              <button className="text-sm text-gray-500 hover:text-gray-700">
-                Privacy
-              </button>
-              <button className="text-sm text-gray-500 hover:text-gray-700">
-                Terms
-              </button>
-            </div>
-          </div>
-        </div>
-      </footer>
+      
+      <Footer />
     </div>
   );
 }

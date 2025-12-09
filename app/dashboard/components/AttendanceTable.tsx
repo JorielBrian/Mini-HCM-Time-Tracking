@@ -229,20 +229,20 @@ export default function AttendanceTable({ refreshTrigger = 0 }: AttendanceTableP
                 <td className="px-6 py-4">
                   <div className="space-y-1">
                     <div className="flex items-center text-sm">
-                      <CheckCircle className="h-3 w-3 text-green-500 mr-2 flex-shrink-0" />
+                      <CheckCircle className="h-3 w-3 text-green-500 mr-2 shrink-0" />
                       <span className="font-medium text-gray-700">In:</span>
                       <span className="ml-2 text-gray-900">{record.punchIn}</span>
                     </div>
                     <div className="flex items-center text-sm">
                       {record.punchOut && record.punchOut !== '-' ? (
                         <>
-                          <XCircle className="h-3 w-3 text-red-500 mr-2 flex-shrink-0" />
+                          <XCircle className="h-3 w-3 text-red-500 mr-2 shrink-0" />
                           <span className="font-medium text-gray-700">Out:</span>
                           <span className="ml-2 text-gray-900">{record.punchOut}</span>
                         </>
                       ) : (
                         <div className="flex items-center text-yellow-600">
-                          <AlertCircle className="h-3 w-3 mr-2 flex-shrink-0" />
+                          <AlertCircle className="h-3 w-3 mr-2 shrink-0" />
                           <span className="text-sm">Not punched out</span>
                         </div>
                       )}
@@ -275,7 +275,7 @@ export default function AttendanceTable({ refreshTrigger = 0 }: AttendanceTableP
                 <td className="px-6 py-4 whitespace-nowrap">
                   {record.lateTime !== 'On time' && record.lateTime !== '-' && record.lateTime !== '0m' ? (
                     <span className="flex items-center px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
-                      <AlertCircle className="h-3 w-3 mr-1 flex-shrink-0" />
+                      <AlertCircle className="h-3 w-3 mr-1 shrink-0" />
                       {record.lateTime}
                     </span>
                   ) : (
