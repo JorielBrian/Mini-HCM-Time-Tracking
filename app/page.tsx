@@ -1,9 +1,11 @@
 import Link from 'next/link';
 import Feature from './components/Feature';
+import Navigation from './components/Navigation';
 
 export default function WelcomePage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-50">
+      <Navigation />
       {/* Hero Section */}
       <main className="container mx-auto px-6 py-16 md:py-24">
         <div className="flex flex-col lg:flex-row items-center justify-center gap-12">
