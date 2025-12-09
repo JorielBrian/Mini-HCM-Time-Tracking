@@ -14,17 +14,8 @@ export default function WelcomePage() {
             <span className="text-2xl font-bold text-gray-800">Mini HCM Time Tracking</span>
           </div>
           <div className="space-x-4">
-            <Link 
-              href="/login" 
-              className="px-4 py-2 text-blue-600 font-medium hover:text-blue-800 transition"
-            >
+            <Link href="/login" className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-md" >
               Sign In
-            </Link>
-            <Link 
-              href="/login" 
-              className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition shadow-md"
-            >
-              Get Started
             </Link>
           </div>
         </div>
@@ -32,9 +23,8 @@ export default function WelcomePage() {
 
       {/* Hero Section */}
       <main className="container mx-auto px-6 py-16 md:py-24">
-        <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
-          {/* Left Column - Text */}
-          <div className="lg:w-1/2">
+        <div className="flex flex-col lg:flex-row items-center justify-center gap-12">
+          <div className="lg:w-full max-w-2xl text-center lg:text-cenber">
             
             <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6 leading-tight">
               Smart Time Tracking
@@ -47,7 +37,7 @@ export default function WelcomePage() {
               that value accuracy and efficiency.
             </p>
             
-            <div className="flex flex-col sm:flex-row gap-4 mb-12">
+            <div className="flex flex-col sm:flex-row gap-4 mb-12 justify-center">
               <Link 
                 href="/login" 
                 className="px-8 py-4 bg-blue-600 text-white text-lg font-semibold rounded-xl hover:bg-blue-700 transition shadow-lg hover:shadow-xl text-center"
@@ -63,7 +53,7 @@ export default function WelcomePage() {
             </div>
 
             {/* Stats */}
-            <div className="flex flex-wrap gap-8">
+            <div className="flex flex-wrap gap-8 justify-center">
               <div>
                 <div className="text-3xl font-bold text-blue-600">99%</div>
                 <div className="text-gray-600">Accuracy Rate</div>
@@ -78,63 +68,6 @@ export default function WelcomePage() {
               </div>
             </div>
           </div>
-
-          {/* Right Column - Illustration */}
-          {/* <div className="lg:w-1/2">
-            <div className="bg-white rounded-2xl shadow-2xl p-8 transform rotate-1 hover:rotate-0 transition-transform duration-300">
-              <div className="space-y-6"> */}
-                {/* Dashboard Preview */}
-                {/* <div className="p-6 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-xl">
-                  <div className="flex justify-between items-center text-white mb-4">
-                    <h3 className="text-xl font-bold">Today's Summary</h3>
-                    <div className="text-sm">Dec 7, 2024</div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-white/20 p-4 rounded-lg backdrop-blur-sm">
-                      <div className="text-sm opacity-90">Regular Hours</div>
-                      <div className="text-2xl font-bold">8.5</div>
-                    </div>
-                    <div className="bg-white/20 p-4 rounded-lg backdrop-blur-sm">
-                      <div className="text-sm opacity-90">Overtime</div>
-                      <div className="text-2xl font-bold">1.5</div>
-                    </div>
-                  </div>
-                </div> */}
-
-                {/* Features Icons */}
-                {/* <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-3 p-4 bg-blue-50 rounded-lg">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Users className="h-5 w-5 text-blue-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold">Team Tracking</div>
-                      <div className="text-sm text-gray-500">Multiple users</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center space-x-3 p-4 bg-indigo-50 rounded-lg">
-                    <div className="p-2 bg-indigo-100 rounded-lg">
-                      <BarChart3 className="h-5 w-5 text-indigo-600" />
-                    </div>
-                    <div>
-                      <div className="font-semibold">Real-time Stats</div>
-                      <div className="text-sm text-gray-500">Live updates</div>
-                    </div>
-                  </div>
-                </div> */}
-
-                {/* Punch In Button Preview */}
-                {/* <div className="text-center">
-                  <div className="inline-block px-6 py-3 bg-green-100 text-green-800 rounded-full font-medium">
-                    <div className="flex items-center space-x-2">
-                      <div className="h-2 w-2 bg-green-500 rounded-full animate-pulse"></div>
-                      <span>Ready to Punch In</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div> */}
-          {/* </div> */}
         </div>
       </main>
 
@@ -222,18 +155,7 @@ export default function WelcomePage() {
               <span className="text-xl font-bold">Mini HCM Time Tracking</span>
             </div>
             <div className="text-gray-400 text-sm">
-              © {new Date().getFullYear()} Mini HCM System. Built for demonstration purposes.
-            </div>
-            <div className="flex space-x-6 mt-4 md:mt-0">
-              <Link href="#" className="text-gray-400 hover:text-white transition">
-                Privacy
-              </Link>
-              <Link href="#" className="text-gray-400 hover:text-white transition">
-                Terms
-              </Link>
-              <Link href="#" className="text-gray-400 hover:text-white transition">
-                Contact
-              </Link>
+              © {new Date().getFullYear()} Mini HCM System. Built for Cornerstone Assessment using Next.js.
             </div>
           </div>
         </div>
