@@ -20,7 +20,7 @@ interface AttendanceRecord {
 }
 
 interface AttendanceTableProps {
-  refreshTrigger?: number; // Add this prop
+  refreshTrigger?: number;
 }
 
 export default function AttendanceTable({ refreshTrigger = 0 }: AttendanceTableProps) {

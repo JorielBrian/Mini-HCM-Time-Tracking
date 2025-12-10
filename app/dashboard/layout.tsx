@@ -6,8 +6,6 @@ import { useRouter } from 'next/navigation';
 import { 
   LogOut, 
   User,
-  Bell,
-  Search,
   Menu,
   X,
   Home,
@@ -74,14 +72,6 @@ export default function DashboardLayout({
               </div>
 
               <div className="hidden lg:ml-8 lg:flex lg:space-x-8">
-                {/* <button 
-                  onClick={() => router.push('/dashboard')}
-                  className="inline-flex items-center px-1 pt-1 text-sm font-medium text-blue-600 border-b-2 border-blue-600"
-                >
-                  <Home className="h-4 w-4 mr-2" />
-                  Dashboard
-                </button> */}
-                
                 {userRole === 'admin' && (
                   <button 
                     onClick={() => router.push('/admin')}
@@ -95,21 +85,6 @@ export default function DashboardLayout({
             </div>
 
             <div className="flex items-center">
-              {/* <div className="hidden lg:block relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <Search className="h-5 w-5 text-gray-400" />
-                </div>
-                <input
-                  type="search"
-                  className="block w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-sm placeholder-gray-500 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Search..."
-                />
-              </div>
-
-              <button className="ml-4 p-2 rounded-full text-gray-500 hover:text-gray-700 hover:bg-gray-100">
-                <Bell size={20} />
-              </button> */}
-
               <div className="ml-4 relative flex items-center">
                 <div className="flex items-center">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
